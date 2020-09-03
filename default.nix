@@ -2,5 +2,5 @@
 , pkgs ? import nixpkgs { } }:
 pkgs.callPackage ./nix/build.nix {
   # TODO This needs gitignore filtering.
-  src = ./hello;
+  src = ./radius-proto;
 }

@@ -1,0 +1,30 @@
+[package]
+name = "radius-proto"
+version = "0.1.0"
+authors = ["Julian Stecklina <js@alien8.de>"]
+edition = "2018"
+license = "AGPL-3.0-or-later"
+
+[lib]
+name = "radius"
+path = "src/lib.rs"
+
+[[bin]]
+name = "simple-radius-server"
+path = "src/server.rs"
+
+[profile.release]
+lto = true
+panic = 'abort'
+codegen-units = 1
+
+[dependencies]
+byteorder = "1.3.4"
+md5 = "0.7.0"
+log = "0.4.11"
+clap = "2.3.33"			# Only for the application
+
+[dependencies.nom]
+version = "5.1.2"
+default-features = false
+features = ["std"]

@@ -1,9 +1,9 @@
 { rustPlatform, src }:
 rustPlatform.buildRustPackage {
-  name = "hello";
+  name = "radius-proto";
 
   inherit src;
 
-  cargoSha256 = "1sksgrmhsirhmdrx7z4g2xix3h729i1w2c59fhsr617q6ch0n5ri";
+  cargoSha256 = "05xr8d4gpw5jpaah3ww3b14kkwrbjglhikb24rja9z8cq49jydky";
   verifyCargoDeps = true;
 }

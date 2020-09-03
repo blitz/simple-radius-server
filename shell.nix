@@ -8,9 +8,14 @@ pkgs.mkShell {
 
   nativeBuildInputs = with pkgs; [
     # Rust development environment
-    cargo rustc rustfmt rust-analyzer
+    cargo cargo-bloat cargo-license rustc rustfmt rust-analyzer
 
     # Dependency management
     niv
+
+    # Testing with radclient. See the examples at
+    # https://wiki.freeradius.org/config/Radclient for how to use
+    # this.
+    freeradius
   ];
 }
