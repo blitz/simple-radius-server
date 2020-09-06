@@ -6,11 +6,10 @@ let
     # TODO This needs gitignore filtering.
     src = ../radius-proto;
   };
-in 
-{
+in {
   inherit simple-radius-server;
 
-  integration-test = import ./integration-test.nix {
-    inherit nixpkgs simple-radius-server;
-  };
+  integration-test =
+    (import ./integration-test.nix { inherit nixpkgs simple-radius-server; })
+    { };
 }
