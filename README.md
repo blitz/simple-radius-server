@@ -3,7 +3,7 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/blitz/simple-radius-server/Test)
 ![GitHub](https://img.shields.io/github/license/blitz/simple-radius-server)
 
-This repository contains a simple RADIUS server written in
+This repository contains a simple [RADIUS](https://tools.ietf.org/html/rfc2865) server written in
 [Rust](https://www.rust-lang.org/). It only supports authentication
 and uses external programs to make a decision on whether to allow or
 reject authentication requests.
