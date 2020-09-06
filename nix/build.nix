@@ -4,6 +4,6 @@ rustPlatform.buildRustPackage {
 
   inherit src;
 
-  cargoSha256 = "1lk505m1f2ad8m75y8cyzqg4i8b6k2rx7wwgmjpclb9yiwb1qhmh";
+  cargoSha256 = "06vh3c87ryp0vzydjvxdmp4w4s6ajicv26jjv74x063s2nd9z7cr";
   verifyCargoDeps = true;
 }

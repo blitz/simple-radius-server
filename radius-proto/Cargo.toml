@@ -1,5 +1,5 @@
 [package]
-name = "radius-proto"
+name = "simple-radius-server"
 version = "0.1.0"
 authors = ["Julian Stecklina <js@alien8.de>"]
 edition = "2018"
