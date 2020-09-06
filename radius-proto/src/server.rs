@@ -1,7 +1,7 @@
-//! This is a simple test program for the RADIUS protocol parsing.
+//! # Simple RADIUS Server
 //!
-//! Send data to it using:
-//! echo "User-Name=test,User-Password=mypass" | radclient -P udp localhost:1812 auth secret
+//! See the command line documentation and README file for usage hints.
+//!
 
 use clap::{crate_version, App, Arg, ArgMatches};
 use log::{debug, error, info, warn};
@@ -66,7 +66,7 @@ fn server_loop(config: Config) -> std::io::Result<()> {
         });
 
         match response {
-            Err(e) => error!("{}: Ignoring packet: {}", src_addr, e),
+            Err(e) => error!("{}: ignoring packet: {}", src_addr, e),
             Ok(Some(data)) => {
                 debug!("{}: sending {} bytes", src_addr, data.len());
                 socket.send_to(&data, src_addr)?;

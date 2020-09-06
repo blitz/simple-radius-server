@@ -30,6 +30,7 @@ INFO - 127.0.0.1:36002: auth-helper '/run/current-system/sw/bin/true' accepted t
 DEBUG - 127.0.0.1:36002: sending 20 bytes
 ...
 ```
+
 This is obviously not a good idea in practice. To use an external authenticator, you need to write a script:
 
 ```sh
@@ -58,4 +59,11 @@ INFO - 127.0.0.1:42769: trying to authenticate as user 'klaus'
 INFO - 127.0.0.1:42769: auth-helper './foo.sh' rejected the request (exit code: 1)
 DEBUG - 127.0.0.1:42769: sending 20 bytes
 ...
+```
+
+[FreeRADIUS](https://freeradius.org/) comes with the `radclient`
+command line tool to send RADIUS messages:
+
+```sh
+echo "User-Name=test,User-Password=mypass" | radclient -P udp localhost:1812 auth secret
 ```
