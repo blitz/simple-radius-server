@@ -4,7 +4,6 @@ mod password;
 mod response;
 mod serialize;
 
-use log::{debug, info};
 use packet::{Attribute, Code, Packet};
 
 #[derive(Debug)]

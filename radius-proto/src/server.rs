@@ -4,17 +4,16 @@
 //! echo "User-Name=test,User-Password=mypass" | radclient -P udp localhost:1812 auth secret
 
 use clap::{crate_version, App, Arg, ArgMatches};
-use log::{debug, error, info};
-use std::net::{IpAddr, SocketAddr, UdpSocket};
+use log::{debug, error, info, warn};
+use std::net::{SocketAddr, UdpSocket};
+use std::process::{Command, Stdio};
 
 use radius::process;
-
-const RADIUS_EXPECTED_USER: &str = "test";
-const RADIUS_EXPECTED_PASSWORD: &str = "mypass";
 
 struct Config {
     listen_addr: SocketAddr,
     secret: String,
+    auth_helper: String,
 }
 
 fn server_loop(config: Config) -> std::io::Result<()> {
@@ -32,16 +31,39 @@ fn server_loop(config: Config) -> std::io::Result<()> {
 
         let response: Option<Vec<u8>> =
             process(&config.secret, &buf[..packet_len], |user, pass| {
-                let success = user == RADIUS_EXPECTED_USER && pass == RADIUS_EXPECTED_PASSWORD;
+                info!("{}: trying to authenticate as user '{}'", src_addr, user);
 
+                let child = Command::new(&config.auth_helper)
+                    .arg(user)
+                    .arg(pass)
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::piped())
+                    .output()
+                    .expect("Failed to execute authentication helper");
+                let status = child.status;
+
+                if child.stderr.len() > 0 {
+                    warn!(
+                        "{}: auth-helper '{}' complained: {}",
+                        src_addr,
+                        config.auth_helper,
+                        String::from_utf8_lossy(&child.stderr).trim_end()
+                    );
+                }
                 info!(
-                    "{}: authenticating as '{}' {}",
+                    "{}: auth-helper '{}' {} the request ({})",
                     src_addr,
-                    user,
-                    if success { "SUCCEEDED" } else { "FAILED" },
+                    config.auth_helper,
+                    if status.success() {
+                        "accepted"
+                    } else {
+                        "rejected"
+                    },
+                    status
                 );
 
-                success
+                status.success()
             });
 
         if let Some(data) = response {
@@ -71,14 +93,15 @@ fn parse_args(m: ArgMatches) -> std::io::Result<Config> {
     Ok(Config {
         listen_addr: SocketAddr::new(listen_address, listen_port),
         secret: m.value_of("secret").unwrap().to_string(),
+        auth_helper: m.value_of("auth-helper").unwrap().to_string(),
     })
 }
 
 fn main() -> std::io::Result<()> {
     let m = App::new("Simple RADIUS Server")
         .version(crate_version!())
-        .after_help(
-	    concat!("This program is a minimal implementation of a RADIUS server that is able to respond to access requests ",
+        .long_about(
+	    concat!("\nThis program is a minimal implementation of a RADIUS server that is able to respond to access requests ",
 		    "from a network access server (e.g. a Wifi router). It does _not_ implement the full RADIUS spec, but instead ",
 		    "tries to be as simple as possible while still being useful.")
         )
@@ -96,17 +119,24 @@ fn main() -> std::io::Result<()> {
                 .help("Select the UDP port that the server will listen on."),
         )
         .arg(
-            Arg::with_name("secret")
-                .required(true)
-                .help("The shared secret between the RADIUS client and server."),
-        )
-        .arg(
             Arg::with_name("listen")
                 .short("l").long("listen")
                 .value_name("address")
 		.default_value("0.0.0.0")
                 .help("The IP address the server listens on"),
         )
+	.arg(
+            Arg::with_name("secret")
+                .required(true)
+                .help("The shared secret between the RADIUS client and server."),
+        )
+        .arg(
+	    Arg::with_name("auth-helper")
+		.required(true)
+		.help(concat!("The path to the executable that performs the actual authentication. It is executed ",
+			      "for each authentication request. It receives the username and password as parameters. ",
+			      "Depending on the exit code the authentication request will be accepted or rejected."))
+	)
         .get_matches();
 
     let verbose = m.occurrences_of("verbosity") as usize;
