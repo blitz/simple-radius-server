@@ -9,8 +9,8 @@ use nom::number::complete::{be_u16, be_u8};
 use nom::sequence::tuple;
 use nom::{Err, IResult};
 use std::convert::TryInto;
-use std::fmt;
 
+use super::error::Error;
 use super::packet::*;
 
 fn parse_authenticator(i: &[u8]) -> IResult<&[u8], [u8; 16]> {
@@ -69,18 +69,6 @@ fn parse_code(i: &[u8]) -> IResult<&[u8], Code> {
     })
 }
 
-/// The error type for RADIUS protocol parsing.
-#[derive(Debug)]
-pub struct ParseError {
-    msg: String,
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Failed to parse RADIUS packet: {}", self.msg)
-    }
-}
-
 fn parse_internal(i: &[u8]) -> IResult<&[u8], Packet> {
     // tuple takes as argument a tuple of parsers and will return
     // a tuple of their results
@@ -109,8 +97,9 @@ fn parse_internal(i: &[u8]) -> IResult<&[u8], Packet> {
 }
 
 /// Parse a RADIUS packet.
-pub fn parse(i: &[u8]) -> Result<Packet, ParseError> {
-    let (_, packet) = parse_internal(i).map_err(|e| ParseError { msg: e.to_string() })?;
+pub fn parse(i: &[u8]) -> Result<Packet, Error> {
+    let (_, packet) = parse_internal(i)
+        .map_err(|e| Error::new(&format!("Failed to parse RADIUS packet: {}", e)))?;
 
     Ok(packet)
 }

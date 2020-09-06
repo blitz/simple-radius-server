@@ -4,6 +4,8 @@
 
 use md5::Context;
 
+use super::error::Error;
+
 /// Remove any trailing zero bytes.
 fn truncate_zero_padding(v: &mut Vec<u8>) {
     let nonzero = v.iter().rposition(|x| *x != 0);
@@ -17,7 +19,7 @@ fn truncate_zero_padding(v: &mut Vec<u8>) {
 /// Decode a password using according to the RADIUS specification.
 ///
 /// See Section 5.2 User-Password for the detailed algorithm.
-pub fn unhide(secret: &str, authenticator: &[u8; 16], hidden: &[u8]) -> Option<String> {
+pub fn unhide(secret: &str, authenticator: &[u8; 16], hidden: &[u8]) -> Result<String, Error> {
     let mut md5_ctx = Context::new();
     let md5_ctx_old;
 
@@ -37,7 +39,7 @@ pub fn unhide(secret: &str, authenticator: &[u8; 16], hidden: &[u8]) -> Option<S
     }
 
     truncate_zero_padding(&mut revealed);
-    String::from_utf8(revealed).ok()
+    Ok(String::from_utf8(revealed)?)
 }
 
 #[cfg(test)]
@@ -53,8 +55,8 @@ mod tests {
         let secret = "secret";
 
         assert_eq!(
-            super::unhide(secret, &authenticator, &hidden),
-            Some(String::from("mypass"))
+            super::unhide(secret, &authenticator, &hidden).unwrap(),
+            String::from("mypass")
         );
     }
 
@@ -70,8 +72,8 @@ mod tests {
         let secret = "secret";
 
         assert_eq!(
-            super::unhide(secret, &authenticator, &hidden),
-            Some(String::from("thisisaverylongpassword"))
+            super::unhide(secret, &authenticator, &hidden).unwrap(),
+            String::from("thisisaverylongpassword")
         );
     }
 }

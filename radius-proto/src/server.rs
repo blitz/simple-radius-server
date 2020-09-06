@@ -29,46 +29,49 @@ fn server_loop(config: Config) -> std::io::Result<()> {
 
         debug!("{}: received {} bytes", src_addr, packet_len);
 
-        let response: Option<Vec<u8>> =
-            process(&config.secret, &buf[..packet_len], |user, pass| {
-                info!("{}: trying to authenticate as user '{}'", src_addr, user);
+        let response = process(&config.secret, &buf[..packet_len], |user, pass| {
+            info!("{}: trying to authenticate as user '{}'", src_addr, user);
 
-                let child = Command::new(&config.auth_helper)
-                    .arg(user)
-                    .arg(pass)
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::piped())
-                    .output()
-                    .expect("Failed to execute authentication helper");
-                let status = child.status;
+            let child = Command::new(&config.auth_helper)
+                .arg(user)
+                .arg(pass)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .output()
+                .expect("Failed to execute authentication helper");
+            let status = child.status;
 
-                if child.stderr.len() > 0 {
-                    warn!(
-                        "{}: auth-helper '{}' complained: {}",
-                        src_addr,
-                        config.auth_helper,
-                        String::from_utf8_lossy(&child.stderr).trim_end()
-                    );
-                }
-                info!(
-                    "{}: auth-helper '{}' {} the request ({})",
+            if child.stderr.len() > 0 {
+                warn!(
+                    "{}: auth-helper '{}' complained: {}",
                     src_addr,
                     config.auth_helper,
-                    if status.success() {
-                        "accepted"
-                    } else {
-                        "rejected"
-                    },
-                    status
+                    String::from_utf8_lossy(&child.stderr).trim_end()
                 );
+            }
+            info!(
+                "{}: auth-helper '{}' {} the request ({})",
+                src_addr,
+                config.auth_helper,
+                if status.success() {
+                    "accepted"
+                } else {
+                    "rejected"
+                },
+                status
+            );
 
-                status.success()
-            });
+            status.success()
+        });
 
-        if let Some(data) = response {
-            debug!("{}: sending {} bytes", src_addr, data.len());
-            socket.send_to(&data, src_addr)?;
+        match response {
+            Err(e) => error!("{}: Ignoring packet: {}", src_addr, e),
+            Ok(Some(data)) => {
+                debug!("{}: sending {} bytes", src_addr, data.len());
+                socket.send_to(&data, src_addr)?;
+            }
+            Ok(None) => {}
         }
     }
 }

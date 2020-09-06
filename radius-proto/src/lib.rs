@@ -1,9 +1,12 @@
+mod error;
 mod packet;
 mod parser;
 mod password;
 mod response;
 mod serialize;
 
+use error::Error;
+use log::info;
 use packet::{Attribute, Code, Packet};
 
 #[derive(Debug)]
@@ -67,12 +70,20 @@ fn to_access_request(packet: &Packet) -> Option<AccessRequest> {
 }
 
 /// Receive a raw RADIUS packet and generate a response.
-pub fn process<F>(secret: &str, packet: &[u8], authenticate: F) -> Option<Vec<u8>>
+pub fn process<F>(secret: &str, packet: &[u8], authenticate: F) -> Result<Option<Vec<u8>>, Error>
 where
     F: Fn(&str, &str) -> bool,
 {
-    let packet = parser::parse(packet).ok()?;
-    let access_request = to_access_request(&packet)?;
+    let packet = parser::parse(packet)?;
+    let access_request = to_access_request(&packet);
+
+    if access_request.is_none() {
+        info!("Ignoring packet with code: {:?}", packet.code);
+
+        return Ok(None);
+    }
+
+    let access_request = access_request.unwrap();
 
     let password = password::unhide(
         secret,
@@ -80,7 +91,7 @@ where
         &access_request.hidden_password,
     )?;
 
-    Some(serialize::serialize(&response::access_response(
+    Ok(Some(serialize::serialize(&response::access_response(
         secret,
         &packet,
         if authenticate(&access_request.username, &password) {
@@ -88,5 +99,5 @@ where
         } else {
             response::Type::AuthFailure
         },
-    ))?)
+    ))?))
 }
