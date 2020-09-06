@@ -9,6 +9,12 @@ This repository contains a simple
 and uses external programs to make a decision on whether to allow or
 reject authentication requests.
 
+## Missing Features
+
+Pretty much **everything is missing**, in particular EAP support. This
+means this code can **not** be used for WPA-EAP ("WPA Enterprise") and
+is probably of no use to you.
+
 ## Building
 
 Release builds can be generated via [Nix](https://nixos.org/):
